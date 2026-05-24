@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="DET勉強"/>
+<title>DET 勉強トラッカー</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon.png"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0f0f0f;--bg2:#1a1a1a;--bg3:#242424;--bg4:#2e2e2e;
+  --txt:#f0ede8;--txt2:#a09a92;--txt3:#5a5550;
+  --blue:#4a9eff;--blue-dim:#1a3a5c;
+  --green:#3ecf8e;--green-dim:#0d3320;
+  --amber:#f5a623;--amber-dim:#3d2800;
+  --purple:#a78bfa;--purple-dim:#2d1f5e;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --radius:12px;--radius-sm:8px;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:100vh;max-width:420px;margin:0 auto;overscroll-behavior:none}
+
+.safe-top{height:env(safe-area-inset-top,0)}
+.safe-bot{height:calc(env(safe-area-inset-bottom,0) + 70px)}
+
+header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border)}
+.logo{font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.logo span{color:var(--blue)}
+.date-chip{font-size:12px;color:var(--txt2);background:var(--bg3);padding:4px 10px;border-radius:20px}
+
+.content{padding:16px 20px;padding-bottom:0}
+
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--bg2);border-top:0.5px solid var(--border2);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;cursor:pointer;color:var(--txt3);font-size:10px;font-weight:500;transition:color 0.15s;border:none;background:none;font-family:var(--font)}
+.tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--blue)}
+
+.page{display:none}.page.active{display:block}
+
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.metric{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center}
+.metric-val{font-size:20px;font-weight:600;display:block;line-height:1}
+.metric-lbl{font-size:11px;color:var(--txt2);margin-top:4px;display:block}
+
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.card-title{font-size:12px;color:var(--txt2);margin-bottom:12px;font-weight:500;letter-spacing:0.3px;text-transform:uppercase}
+
+.task-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:transparent;appearance:none;-webkit-appearance:none;cursor:pointer;flex-shrink:0;position:relative;transition:all 0.15s}
+.task-check:checked{background:var(--blue);border-color:var(--blue)}
+.task-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:6px;height:10px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.task-label{flex:1;font-size:13px;line-height:1.4}
+.task-label.done{text-decoration:line-through;color:var(--txt3)}
+.badge{font-size:10px;padding:3px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.b-listen{background:var(--blue-dim);color:var(--blue)}
+.b-write{background:var(--purple-dim);color:var(--purple)}
+.b-vocab{background:var(--green-dim);color:var(--green)}
+.b-mock{background:var(--amber-dim);color:var(--amber)}
+
+.done-banner{background:var(--green-dim);border:0.5px solid var(--green);color:var(--green);border-radius:var(--radius-sm);padding:10px 14px;text-align:center;font-size:13px;font-weight:500;margin-top:10px;display:none}
+
+.streak-row{display:flex;gap:5px;justify-content:space-between;margin:4px 0}
+.streak-dot{flex:1;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;border:0.5px solid var(--border)}
+.streak-dot.done{background:var(--green-dim);color:var(--green);border-color:var(--green)}
+.streak-dot.today{border:1.5px solid var(--blue);color:var(--blue)}
+.streak-dot.empty{color:var(--txt3)}
+.streak-count{text-align:center;font-size:12px;color:var(--txt2);margin-top:8px}
+
+.timer-display{font-family:var(--mono);font-size:56px;font-weight:500;text-align:center;letter-spacing:4px;margin:12px 0;color:var(--txt)}
+.timer-display.running{color:var(--blue)}
+
+.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+.preset-btn{padding:8px 4px;font-size:12px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--bg3);cursor:pointer;color:var(--txt2);font-family:var(--font);text-align:center;transition:all 0.15s}
+.preset-btn.selected{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);font-weight:500}
+
+.timer-controls{display:flex;gap:8px;justify-content:center}
+.btn-main{padding:12px 32px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:15px;font-family:var(--font);font-weight:600;transition:opacity 0.15s;letter-spacing:-0.2px}
+.btn-main:active{opacity:0.8}
+.btn-sub{padding:12px 20px;background:var(--bg3);color:var(--txt);border:0.5px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:15px;font-family:var(--font);transition:opacity 0.15s}
+.btn-sub:active{opacity:0.7}
+
+.log-row2{display:flex;align-items:center;gap:8px;margin-top:12px}
+.log-row2 input,.log-row2 select{background:var(--bg3);border:0.5px solid var(--border2);color:var(--txt);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-family:var(--font)}
+.log-row2 input{width:58px;text-align:center}
+.log-row2 select{flex:1}
+.log-row2 .btn-rec{padding:10px 14px;background:var(--green-dim);color:var(--green);border:0.5px solid var(--green);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:var(--font);font-weight:500;white-space:nowrap}
+
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-day{font-size:12px;color:var(--txt2);width:16px;text-align:center}
+.bar-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:var(--blue);border-radius:4px;transition:width 0.4s cubic-bezier(.4,0,.2,1)}
+.bar-min{font-size:11px;color:var(--txt3);min-width:28px;text-align:right}
+
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-left{font-size:12px;color:var(--txt2)}
+.hist-right{font-size:13px;font-weight:500}
+
+.ok-msg{font-size:12px;color:var(--green);margin-top:8px;text-align:center;min-height:18px}
+</style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<header>
+  <div class="logo">DET <span>勉強</span></div>
+  <div class="date-chip" id="hdr-date"></div>
+</header>
+
+<div class="content">
+
+<div id="page-today" class="page active">
+  <div class="metrics" id="today-metrics"></div>
+  <div class="card">
+    <div class="card-title" id="task-title">今日のタスク</div>
+    <div id="task-list"></div>
+    <div class="done-banner" id="done-banner">今日のタスク全部完了！</div>
+  </div>
+  <div class="card">
+    <div class="card-title">今週のstreak</div>
+    <div class="streak-row" id="streak-row"></div>
+    <div class="streak-count" id="streak-count"></div>
+  </div>
+</div>
+
+<div id="page-timer" class="page">
+  <div class="card">
+    <div class="card-title">タイマー</div>
+    <div class="preset-grid" id="presets"></div>
+    <div class="timer-display" id="timer-disp">05:00</div>
+    <div class="timer-controls">
+      <button class="btn-main" id="timer-btn" onclick="timerToggle()">スタート</button>
+      <button class="btn-sub" onclick="timerReset()">リセット</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">勉強時間を記録</div>
+    <div class="log-row2">
+      <input type="number" id="manual-min" min="1" max="180" value="30"/>
+      <span style="font-size:13px;color:var(--txt2)">分</span>
+      <select id="manual-type">
+        <option value="listen">聴解</option>
+        <option value="write">ライティング</option>
+        <option value="vocab">単語</option>
+        <option value="mock">模試</option>
+      </select>
+      <button class="btn-rec" onclick="manualLog()">記録</button>
+    </div>
+    <div class="ok-msg" id="log-ok"></div>
+  </div>
+</div>
+
+<div id="page-log" class="page">
+  <div class="metrics" id="log-metrics"></div>
+  <div class="card">
+    <div class="card-title">今週の記録（分）</div>
+    <div id="weekly-bars"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">最近の記録</div>
+    <div id="log-list"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="safe-bot"></div>
+
+<nav class="tab-bar">
+  <button class="tab active" onclick="showPage('today',this)" aria-label="今日">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    今日
+  </button>
+  <button class="tab" onclick="showPage('timer',this)" aria-label="タイマー">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 15.5"/><line x1="9.5" y1="2" x2="14.5" y2="2"/></svg>
+    タイマー
+  </button>
+  <button class="tab" onclick="showPage('log',this)" aria-label="記録">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    記録
+  </button>
+</nav>
+
+<script>
+const DAYS=['日','月','火','水','木','金','土'];
+const TASKS={
+  0:[],
+  1:[{label:'ディクテーション・Listen & Type練習',type:'listen'},{label:'単語チェック（5〜10分）',type:'vocab'}],
+  2:[{label:'タイムド英作文（100〜200語）',type:'write'},{label:'単語チェック（5〜10分）',type:'vocab'}],
+  3:[{label:'ディクテーション・Listen & Type練習',type:'listen'},{label:'単語チェック（5〜10分）',type:'vocab'}],
+  4:[{label:'タイムド英作文（100〜200語）',type:'write'},{label:'単語チェック（5〜10分）',type:'vocab'}],
+  5:[{label:'ディクテーション・Listen & Type練習',type:'listen'},{label:'単語チェック（5〜10分）',type:'vocab'}],
+  6:[{label:'DET模擬テスト（通し）',type:'mock'},{label:'弱点レビュー・答え合わせ',type:'mock'}]
+};
+const PRESETS=[{label:'5分\nライティング',min:5},{label:'15分\n聴解',min:15},{label:'30分\nメイン',min:30},{label:'40分\n模試',min:40},{label:'60分\nフル',min:60},{label:'カスタム',min:null}];
+const TLABEL={listen:'聴解',write:'ライティング',vocab:'単語',mock:'模試'};
+const BADGE={listen:'b-listen',write:'b-write',vocab:'b-vocab',mock:'b-mock'};
+
+function today(){return new Date().toISOString().slice(0,10)}
+function gs(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+function getChecked(){return gs('det_ck_'+today(),[])}
+function setChecked(a){ss('det_ck_'+today(),a)}
+function getLogs(){return gs('det_logs',[])}
+function addLog(e){const l=getLogs();l.unshift(e);if(l.length>90)l.pop();ss('det_logs',l)}
+function getStreak(){return gs('det_streak',{days:[],count:0})}
+function markStreak(){
+  const s=getStreak(),t=today();
+  if(!s.days.includes(t)){s.days.push(t);s.days=s.days.slice(-60)}
+  const now=new Date();let c=0;
+  for(let i=0;i<60;i++){const d=new Date(now);d.setDate(d.getDate()-i);if(s.days.includes(d.toISOString().slice(0,10)))c++;else break}
+  s.count=c;ss('det_streak',s);return s
+}
+
+const now=new Date();
+const JA_DATE=`${now.getMonth()+1}月${now.getDate()}日（${DAYS[now.getDay()]}）`;
+document.getElementById('hdr-date').textContent=JA_DATE;
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='log')renderLog();
+  if(id==='today')renderToday();
+}
+
+function renderToday(){
+  const dow=new Date().getDay();
+  const tasks=TASKS[dow];
+  const checked=getChecked();
+  document.getElementById('task-title').textContent=`今日のタスク — ${DAYS[dow]}曜日`;
+  const tl=document.getElementById('task-list');
+  if(!tasks.length){tl.innerHTML='<p style="font-size:13px;color:var(--txt2);padding:8px 0">今日は休み！しっかり休んで</p>';
+  }else{
+    tl.innerHTML=tasks.map((t,i)=>`
+      <div class="task-row">
+        <input type="checkbox" class="task-check" id="tc${i}" ${checked.includes(i)?'checked':''} onchange="toggleTask(${i})"/>
+        <label class="task-label ${checked.includes(i)?'done':''}" for="tc${i}">${t.label}</label>
+        <span class="badge ${BADGE[t.type]}">${TLABEL[t.type]}</span>
+      </div>`).join('');
+  }
+  const total=getLogs().filter(l=>l.date===today()).reduce((a,l)=>a+l.min,0);
+  const pct=Math.min(100,Math.round(total/90*100));
+  document.getElementById('today-metrics').innerHTML=`
+    <div class="metric"><span class="metric-val">${total}分</span><span class="metric-lbl">今日の合計</span></div>
+    <div class="metric"><span class="metric-val">${checked.length}/${tasks.length||'—'}</span><span class="metric-lbl">タスク</span></div>
+    <div class="metric"><span class="metric-val">${pct}%</span><span class="metric-lbl">目標達成</span></div>`;
+  const banner=document.getElementById('done-banner');
+  banner.style.display=(tasks.length&&checked.length===tasks.length)?'block':'none';
+  renderStreakRow();
+}
+
+function toggleTask(i){
+  let ch=getChecked();
+  ch.includes(i)?ch=ch.filter(x=>x!==i):ch.push(i);
+  setChecked(ch);
+  const tasks=TASKS[new Date().getDay()];
+  if(ch.length===tasks.length&&tasks.length)markStreak();
+  renderToday();
+}
+
+function renderStreakRow(){
+  const s=getStreak(),now=new Date();
+  document.getElementById('streak-row').innerHTML=DAYS.map((_,i)=>{
+    const d=new Date(now);
+    const diff=(now.getDay()-i+7)%7;
+    d.setDate(d.getDate()-diff);
+    const ds=d.toISOString().slice(0,10);
+    const isToday=ds===today(),done=s.days.includes(ds);
+    return `<div class="streak-dot ${done?'done':''} ${isToday&&!done?'today':''}">${DAYS[i]}</div>`;
+  }).join('');
+  document.getElementById('streak-count').textContent=`連続 ${s.count} 日`;
+}
+
+let tSec=300,tRunning=false,tInterval=null,selPreset=0,customMin=null;
+function initTimer(){
+  document.getElementById('presets').innerHTML=PRESETS.map((p,i)=>`
+    <button class="preset-btn ${i===0?'selected':''}" onclick="selectPreset(${i},this)">${p.label.replace('\n','<br>')}</button>`).join('');
+}
+function selectPreset(i,el){
+  if(PRESETS[i].min===null){
+    const m=parseInt(prompt('何分？','25'));
+    if(!m||m<1)return;
+    customMin=m;tSec=m*60;
+  }else{
+    tSec=PRESETS[i].min*60;customMin=null;
+  }
+  selPreset=i;tRunning=false;clearInterval(tInterval);
+  document.getElementById('timer-btn').textContent='スタート';
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('timer-disp').classList.remove('running');
+  updateDisp();
+}
+function updateDisp(){
+  const m=Math.floor(tSec/60),s=tSec%60;
+  document.getElementById('timer-disp').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function timerToggle(){
+  if(tRunning){
+    tRunning=false;clearInterval(tInterval);
+    document.getElementById('timer-btn').textContent='スタート';
+    document.getElementById('timer-disp').classList.remove('running');
+  }else{
+    if(tSec<=0)return;
+    tRunning=true;
+    document.getElementById('timer-btn').textContent='一時停止';
+    document.getElementById('timer-disp').classList.add('running');
+    tInterval=setInterval(()=>{
+      if(tSec<=0){
+        clearInterval(tInterval);tRunning=false;
+        document.getElementById('timer-btn').textContent='スタート';
+        document.getElementById('timer-disp').classList.remove('running');
+        if(window.Notification&&Notification.permission==='granted'){
+          new Notification('タイマー終了！',{body:'お疲れさま。記録しといてね。',icon:'icon.png'});
+        }
+        return;
+      }
+      tSec--;updateDisp();
+    },1000);
+  }
+}
+function timerReset(){
+  clearInterval(tInterval);tRunning=false;
+  const p=PRESETS[selPreset];
+  tSec=p.min?p.min*60:(customMin||5)*60;
+  document.getElementById('timer-btn').textContent='スタート';
+  document.getElementById('timer-disp').classList.remove('running');
+  updateDisp();
+}
+function manualLog(){
+  const min=parseInt(document.getElementById('manual-min').value)||0;
+  const type=document.getElementById('manual-type').value;
+  if(min<=0)return;
+  addLog({date:today(),min,type});
+  const ok=document.getElementById('log-ok');
+  ok.textContent='記録したで！';
+  setTimeout(()=>ok.textContent='',2500);
+  renderToday();
+}
+
+function renderLog(){
+  const logs=getLogs();
+  const todayMin=logs.filter(l=>l.date===today()).reduce((a,l)=>a+l.min,0);
+  const now=new Date();
+  const weekMin=logs.filter(l=>(now-new Date(l.date))<7*86400000).reduce((a,l)=>a+l.min,0);
+  const totalDays=[...new Set(logs.map(l=>l.date))].length;
+  document.getElementById('log-metrics').innerHTML=`
+    <div class="metric"><span class="metric-val">${todayMin}分</span><span class="metric-lbl">今日</span></div>
+    <div class="metric"><span class="metric-val">${weekMin}分</span><span class="metric-lbl">今週</span></div>
+    <div class="metric"><span class="metric-val">${totalDays}日</span><span class="metric-lbl">累計日数</span></div>`;
+
+  document.getElementById('weekly-bars').innerHTML=DAYS.map((_,i)=>{
+    const d=new Date(now);
+    d.setDate(d.getDate()-(now.getDay()-i+7)%7);
+    const ds=d.toISOString().slice(0,10);
+    const min=logs.filter(l=>l.date===ds).reduce((a,l)=>a+l.min,0);
+    const pct=Math.min(100,Math.round(min/90*100));
+    return `<div class="bar-row">
+      <span class="bar-day">${DAYS[i]}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <span class="bar-min">${min}分</span>
+    </div>`;
+  }).join('');
+
+  const ll=document.getElementById('log-list');
+  if(!logs.length){ll.innerHTML='<p style="font-size:13px;color:var(--txt2);padding:8px 0">まだ記録なし</p>';return}
+  ll.innerHTML=logs.slice(0,12).map(l=>`
+    <div class="hist-row">
+      <span class="hist-left">${l.date} <span class="badge ${BADGE[l.type]}" style="font-size:10px;padding:2px 6px">${TLABEL[l.type]}</span></span>
+      <span class="hist-right">${l.min}分</span>
+    </div>`).join('');
+}
+
+if('Notification' in window&&Notification.permission==='default'){
+  Notification.requestPermission();
+}
+
+initTimer();updateDisp();renderToday();
+</script>
+</body>
+</html>
