@@ -107,6 +107,28 @@ header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:sp
 .hist-right{font-size:13px;font-weight:500}
 
 .ok-msg{font-size:12px;color:var(--green);margin-top:8px;text-align:center;min-height:18px}
+
+/* ===== 週プラン ===== */
+.week-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.wtab{padding:6px 12px;border-radius:20px;border:0.5px solid var(--border2);background:transparent;cursor:pointer;font-size:12px;color:var(--txt2);font-family:var(--font);transition:all 0.15s}
+.wtab.on{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);font-weight:500}
+.week-goal{font-size:12px;color:var(--green);background:var(--green-dim);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:12px;line-height:1.5}
+.plan-day{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.plan-day:last-child{border-bottom:none}
+.plan-day-lbl{font-size:12px;font-weight:600;min-width:20px;color:var(--txt2);padding-top:3px}
+.plan-blocks{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.pb{font-size:11px;padding:3px 8px;border-radius:20px;border:0.5px solid var(--border2)}
+.pb-l{background:var(--blue-dim);color:var(--blue);border-color:var(--blue-dim)}
+.pb-r{background:var(--green-dim);color:var(--green);border-color:var(--green-dim)}
+.pb-w{background:var(--purple-dim);color:var(--purple);border-color:var(--purple-dim)}
+.pb-s{background:#2d1f3a;color:#c084fc;border-color:#7c3aed}
+.pb-m{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-dim)}
+.pb-rest{background:var(--bg3);color:var(--txt3);border-color:var(--border)}
+.plan-tip{font-size:12px;color:var(--txt2);background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px;line-height:1.6}
+.week-progress{margin-bottom:14px}
+.wp-label{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:6px}
+.wp-bar{height:6px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.wp-fill{height:100%;background:var(--blue);border-radius:4px;transition:width 0.4s}
 </style>
 </head>
 <body>
@@ -173,6 +195,18 @@ header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:sp
   </div>
 </div>
 
+<div id="page-plan" class="page">
+  <div class="card">
+    <div class="card-title">7週間プラン — 10月入学目標</div>
+    <div class="week-progress">
+      <div class="wp-label"><span id="wp-txt">週1 / 7</span><span id="wp-pct">14%</span></div>
+      <div class="wp-bar"><div class="wp-fill" id="wp-fill" style="width:14%"></div></div>
+    </div>
+    <div class="week-tabs" id="week-tabs"></div>
+    <div id="plan-content"></div>
+  </div>
+</div>
+
 </div>
 
 <div class="safe-bot"></div>
@@ -189,6 +223,10 @@ header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:sp
   <button class="tab" onclick="showPage('log',this)" aria-label="記録">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     記録
+  </button>
+  <button class="tab" onclick="showPage('plan',this)" aria-label="プラン">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    プラン
   </button>
 </nav>
 
@@ -207,10 +245,75 @@ const PRESETS=[{label:'5分\nライティング',min:5},{label:'15分\n聴解',m
 const TLABEL={listen:'聴解',write:'ライティング',vocab:'単語',mock:'模試'};
 const BADGE={listen:'b-listen',write:'b-write',vocab:'b-vocab',mock:'b-mock'};
 
+const WEEKS=[
+  {title:'週1',goal:'毎日2時間の習慣をつくる',tip:'まず公式模擬テストを1回受けて現状スコアを確認。今週は量より継続を優先。',days:[
+    {l:'月',b:[{t:'リスニング・Listen and Type 40分',c:'pb-l'},{t:'語彙・穴埋め 30分',c:'pb-r'},{t:'ライティング 30分',c:'pb-w'}]},
+    {l:'火',b:[{t:'リスニング・ディクテーション 40分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'水',b:[{t:'ライティング 40分',c:'pb-w'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'木',b:[{t:'リスニング 40分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'ライティング 20分',c:'pb-w'}]},
+    {l:'金',b:[{t:'スピーキング 40分',c:'pb-s'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'土',b:[{t:'公式模擬テスト 60分',c:'pb-m'},{t:'間違い分析 60分',c:'pb-m'}]},
+    {l:'日',b:[{t:'完全休息',c:'pb-rest'}]}
+  ]},
+  {title:'週2',goal:'長い単語でも流れを止めない練習',tip:'「長い単語が来たらスルーして前後を拾う」戦略を意識して練習。',days:[
+    {l:'月',b:[{t:'Listen and Type・1回再生縛り 50分',c:'pb-l'},{t:'語彙・長語集中 30分',c:'pb-r'},{t:'ライティング 30分',c:'pb-w'}]},
+    {l:'火',b:[{t:'リスニング・スクリプト確認あり 40分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'水',b:[{t:'ライティング・Interactive Writing 50分',c:'pb-w'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'木',b:[{t:'リスニング・ニュース音声 40分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'スピーキング 20分',c:'pb-s'}]},
+    {l:'金',b:[{t:'スピーキング・Read Aloud 40分',c:'pb-s'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'土',b:[{t:'模擬テスト 60分',c:'pb-m'},{t:'弱点分析 60分',c:'pb-m'}]},
+    {l:'日',b:[{t:'完全休息',c:'pb-rest'}]}
+  ]},
+  {title:'週3',goal:'語彙力と読解スピードを上げる',tip:'読解問題は「本文に書いてある」ことだけを根拠に選ぶ練習を徹底。',days:[
+    {l:'月',b:[{t:'語彙・穴埋め集中 50分',c:'pb-r'},{t:'リスニング 40分',c:'pb-l'},{t:'ライティング 30分',c:'pb-w'}]},
+    {l:'火',b:[{t:'リーディング・長文読解 50分',c:'pb-r'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'水',b:[{t:'ライティング 40分',c:'pb-w'},{t:'リーディング 40分',c:'pb-r'},{t:'リスニング 20分',c:'pb-l'}]},
+    {l:'木',b:[{t:'語彙・同義語集中 40分',c:'pb-r'},{t:'リスニング 40分',c:'pb-l'},{t:'スピーキング 20分',c:'pb-s'}]},
+    {l:'金',b:[{t:'リーディング・タイム計測 40分',c:'pb-r'},{t:'リスニング 40分',c:'pb-l'},{t:'ライティング 20分',c:'pb-w'}]},
+    {l:'土',b:[{t:'模擬テスト 60分',c:'pb-m'},{t:'弱点分析 60分',c:'pb-m'}]},
+    {l:'日',b:[{t:'完全休息',c:'pb-rest'}]}
+  ]},
+  {title:'週4',goal:'スコア90台を初めて出す',tip:'今週は公式模擬テストを2回受ける。スコアが上がってたら自信を持ってOK。',days:[
+    {l:'月',b:[{t:'公式模擬テスト 60分',c:'pb-m'},{t:'全セクション復習 60分',c:'pb-m'}]},
+    {l:'火',b:[{t:'リスニング強化 50分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'水',b:[{t:'ライティング 50分',c:'pb-w'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'木',b:[{t:'スピーキング集中 50分',c:'pb-s'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'金',b:[{t:'公式模擬テスト 60分',c:'pb-m'},{t:'弱点分析 60分',c:'pb-m'}]},
+    {l:'土',b:[{t:'全セクション総復習 120分',c:'pb-m'}]},
+    {l:'日',b:[{t:'完全休息',c:'pb-rest'}]}
+  ]},
+  {title:'週5',goal:'スピーキングで足を引っ張らない',tip:'スピーキングは量をこなすより「ゆっくり正確に」が大事。焦らんでええ。',days:[
+    {l:'月',b:[{t:'Speak About a Photo 50分',c:'pb-s'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'火',b:[{t:'リスニング 50分',c:'pb-l'},{t:'リーディング 40分',c:'pb-r'},{t:'スピーキング 20分',c:'pb-s'}]},
+    {l:'水',b:[{t:'ライティング 40分',c:'pb-w'},{t:'スピーキング 40分',c:'pb-s'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'木',b:[{t:'Read Then Speak 50分',c:'pb-s'},{t:'リスニング 40分',c:'pb-l'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'金',b:[{t:'リスニング 50分',c:'pb-l'},{t:'スピーキング 40分',c:'pb-s'},{t:'ライティング 20分',c:'pb-w'}]},
+    {l:'土',b:[{t:'模擬テスト 60分',c:'pb-m'},{t:'弱点分析 60分',c:'pb-m'}]},
+    {l:'日',b:[{t:'完全休息',c:'pb-rest'}]}
+  ]},
+  {title:'週6',goal:'本番想定の練習に切り替える',tip:'毎回「本番のつもりで」やること。時間を計って集中力を維持する練習。',days:[
+    {l:'月',b:[{t:'公式模擬テスト 60分',c:'pb-m'},{t:'全セクション復習 60分',c:'pb-m'}]},
+    {l:'火',b:[{t:'リスニング本番想定 50分',c:'pb-l'},{t:'リーディング本番想定 40分',c:'pb-r'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'水',b:[{t:'ライティング本番想定 50分',c:'pb-w'},{t:'スピーキング本番想定 40分',c:'pb-s'},{t:'語彙 20分',c:'pb-r'}]},
+    {l:'木',b:[{t:'模擬テスト 60分',c:'pb-m'},{t:'弱点最終チェック 60分',c:'pb-m'}]},
+    {l:'金',b:[{t:'軽めの復習 60分',c:'pb-r'},{t:'リスニング 40分',c:'pb-l'}]},
+    {l:'土',b:[{t:'軽いウォームアップのみ 30分',c:'pb-r'}]},
+    {l:'日',b:[{t:'DET本番受験！',c:'pb-m'}]}
+  ]},
+  {title:'週7',goal:'95点達成 or 再受験準備',tip:'95点以上やったらLaSalle出願へ。足りんかったらもう1週間集中して再受験。',days:[
+    {l:'月',b:[{t:'結果確認・分析',c:'pb-m'}]},
+    {l:'火',b:[{t:'95点以上 → 出願準備',c:'pb-r'},{t:'足りない → 弱点集中 120分',c:'pb-m'}]},
+    {l:'水',b:[{t:'95点以上 → 書類準備',c:'pb-r'},{t:'足りない → リスニング集中',c:'pb-l'}]},
+    {l:'木',b:[{t:'95点以上 → 書類準備',c:'pb-r'},{t:'足りない → 模擬テスト',c:'pb-m'}]},
+    {l:'金',b:[{t:'95点以上 → 出願！',c:'pb-r'},{t:'足りない → 再受験申込',c:'pb-m'}]},
+    {l:'土',b:[{t:'お疲れ様！',c:'pb-rest'}]},
+    {l:'日',b:[{t:'お疲れ様！',c:'pb-rest'}]}
+  ]}
+];
+
 function today(){return new Date().toISOString().slice(0,10)}
 function gs(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
 function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-
 function getChecked(){return gs('det_ck_'+today(),[])}
 function setChecked(a){ss('det_ck_'+today(),a)}
 function getLogs(){return gs('det_logs',[])}
@@ -235,6 +338,7 @@ function showPage(id,el){
   el.classList.add('active');
   if(id==='log')renderLog();
   if(id==='today')renderToday();
+  if(id==='plan')renderPlan();
 }
 
 function renderToday(){
@@ -243,8 +347,8 @@ function renderToday(){
   const checked=getChecked();
   document.getElementById('task-title').textContent=`今日のタスク — ${DAYS[dow]}曜日`;
   const tl=document.getElementById('task-list');
-  if(!tasks.length){tl.innerHTML='<p style="font-size:13px;color:var(--txt2);padding:8px 0">今日は休み！しっかり休んで</p>';
-  }else{
+  if(!tasks.length){tl.innerHTML='<p style="font-size:13px;color:var(--txt2);padding:8px 0">今日は休み！しっかり休んで</p>';}
+  else{
     tl.innerHTML=tasks.map((t,i)=>`
       <div class="task-row">
         <input type="checkbox" class="task-check" id="tc${i}" ${checked.includes(i)?'checked':''} onchange="toggleTask(${i})"/>
@@ -285,6 +389,36 @@ function renderStreakRow(){
   document.getElementById('streak-count').textContent=`連続 ${s.count} 日`;
 }
 
+let curWeek=gs('det_cur_week',0);
+
+function renderPlan(){
+  const tabs=document.getElementById('week-tabs');
+  tabs.innerHTML=WEEKS.map((w,i)=>`<button class="wtab ${i===curWeek?'on':''}" onclick="selectWeek(${i})">${w.title}</button>`).join('');
+  showWeek(curWeek);
+}
+
+function selectWeek(i){
+  curWeek=i;ss('det_cur_week',i);
+  document.querySelectorAll('.wtab').forEach((b,idx)=>b.classList.toggle('on',idx===i));
+  showWeek(i);
+}
+
+function showWeek(i){
+  const w=WEEKS[i];
+  const pct=Math.round((i+1)/7*100);
+  document.getElementById('wp-txt').textContent=`週${i+1} / 7`;
+  document.getElementById('wp-pct').textContent=pct+'%';
+  document.getElementById('wp-fill').style.width=pct+'%';
+  document.getElementById('plan-content').innerHTML=`
+    <div class="week-goal">${w.goal}</div>
+    ${w.days.map(d=>`
+      <div class="plan-day">
+        <div class="plan-day-lbl">${d.l}</div>
+        <div class="plan-blocks">${d.b.map(b=>`<span class="pb ${b.c}">${b.t}</span>`).join('')}</div>
+      </div>`).join('')}
+    <div class="plan-tip">${w.tip}</div>`;
+}
+
 let tSec=300,tRunning=false,tInterval=null,selPreset=0,customMin=null;
 function initTimer(){
   document.getElementById('presets').innerHTML=PRESETS.map((p,i)=>`
@@ -295,9 +429,7 @@ function selectPreset(i,el){
     const m=parseInt(prompt('何分？','25'));
     if(!m||m<1)return;
     customMin=m;tSec=m*60;
-  }else{
-    tSec=PRESETS[i].min*60;customMin=null;
-  }
+  }else{tSec=PRESETS[i].min*60;customMin=null;}
   selPreset=i;tRunning=false;clearInterval(tInterval);
   document.getElementById('timer-btn').textContent='スタート';
   document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('selected'));
@@ -362,7 +494,6 @@ function renderLog(){
     <div class="metric"><span class="metric-val">${todayMin}分</span><span class="metric-lbl">今日</span></div>
     <div class="metric"><span class="metric-val">${weekMin}分</span><span class="metric-lbl">今週</span></div>
     <div class="metric"><span class="metric-val">${totalDays}日</span><span class="metric-lbl">累計日数</span></div>`;
-
   document.getElementById('weekly-bars').innerHTML=DAYS.map((_,i)=>{
     const d=new Date(now);
     d.setDate(d.getDate()-(now.getDay()-i+7)%7);
@@ -375,7 +506,6 @@ function renderLog(){
       <span class="bar-min">${min}分</span>
     </div>`;
   }).join('');
-
   const ll=document.getElementById('log-list');
   if(!logs.length){ll.innerHTML='<p style="font-size:13px;color:var(--txt2);padding:8px 0">まだ記録なし</p>';return}
   ll.innerHTML=logs.slice(0,12).map(l=>`
@@ -385,10 +515,7 @@ function renderLog(){
     </div>`).join('');
 }
 
-if('Notification' in window&&Notification.permission==='default'){
-  Notification.requestPermission();
-}
-
+if('Notification' in window&&Notification.permission==='default'){Notification.requestPermission();}
 initTimer();updateDisp();renderToday();
 </script>
 </body>
